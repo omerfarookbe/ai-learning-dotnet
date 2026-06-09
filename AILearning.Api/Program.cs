@@ -1,5 +1,4 @@
 using AiLearning.Api.Services.Implementation;
-using AiLearning.Api.Services.Interface;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,9 +6,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// DI registrations
-builder.Services.AddSingleton<ILlmService, ClaudeService>();
-builder.Services.AddSingleton<ILlmService, OpenAIService>();
+builder.Services.AddSingleton<ClaudeService>();
+builder.Services.AddSingleton<OpenAIService>();
+builder.Services.AddSingleton<GeminiService>();
 
 var app = builder.Build();
 
