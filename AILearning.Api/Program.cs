@@ -9,6 +9,7 @@ builder.Services.AddSwaggerGen();
 
 // DI registrations
 builder.Services.AddSingleton<ILlmService, ClaudeService>();
+builder.Services.AddSingleton<ILlmService, OpenAIService>();
 
 var app = builder.Build();
 
