@@ -11,8 +11,20 @@ namespace AiLearning.Api.Services.Implementation
         private readonly AnthropicClient _client;
         public ClaudeService(IConfiguration configuration)
         {
-            var apiKey = configuration["LlmProviders:Anthropic:ApiKey"] ?? throw new ArgumentNullException("Anthropic API key is not configured");
-            _client = new Anthropic.SDK.AnthropicClient(apiKey);
+            var apiKey = configuration["LlmProviders:Anthropic:ApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new Services.Exceptions.ProviderConfigurationException("Anthropic API key is not configured");
+            }
+
+            try
+            {
+                _client = new Anthropic.SDK.AnthropicClient(apiKey);
+            }
+            catch (Exception ex)
+            {
+                throw new Services.Exceptions.ProviderRuntimeException("Failed to initialize Anthropic client", ex);
+            }
         }
 
         public async Task<ChatResponse> ChatAsync(ChatRequest request)
@@ -38,15 +50,22 @@ namespace AiLearning.Api.Services.Implementation
                 };
             }
 
-            var response = await _client.Messages.GetClaudeMessageAsync(parameters);
-
-            return new ChatResponse
+            try
             {
-                Provider = "Claude",
-                Content = response.Content.OfType<TextContent>().First().Text,
-                InputTokens = (int)response.Usage.InputTokens,
-                OutputTokens = (int)response.Usage.OutputTokens
-            };
+                var response = await _client.Messages.GetClaudeMessageAsync(parameters);
+
+                return new ChatResponse
+                {
+                    Provider = "Claude",
+                    Content = response.Content.OfType<TextContent>().First().Text,
+                    InputTokens = (int)response.Usage.InputTokens,
+                    OutputTokens = (int)response.Usage.OutputTokens
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Services.Exceptions.ProviderRuntimeException("Anthropic provider call failed", ex);
+            }
         }
     }
 }
