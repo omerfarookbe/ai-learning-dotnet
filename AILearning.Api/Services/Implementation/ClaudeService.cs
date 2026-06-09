@@ -1,6 +1,52 @@
-﻿namespace AiLearning.Api.Services.Implementation
+﻿using AiLearning.Api.Models;
+using AiLearning.Api.Services.Interface;
+using Anthropic.SDK;
+using Anthropic.SDK.Constants;
+using Anthropic.SDK.Messaging;
+
+namespace AiLearning.Api.Services.Implementation
 {
-    public class ClaudeService
+    public class ClaudeService : ILlmService
     {
+        private readonly AnthropicClient _client;
+        public ClaudeService(IConfiguration configuration)
+        {
+            var apiKey = configuration["LlmProviders:Anthropic:ApiKey"] ?? throw new ArgumentNullException("Anthropic API key is not configured");
+            _client = new Anthropic.SDK.AnthropicClient(apiKey);
+        }
+
+        public async Task<ChatResponse> ChatAsync(ChatRequest request)
+        {
+            var messages = new List<Message>
+            {
+                new Message(RoleType.User, request.Message)
+            };
+
+            var parameters = new MessageParameters
+            {
+                Model = AnthropicModels.Claude45Sonnet,
+                MaxTokens = request.MaxTokens,
+                Temperature = (decimal)request.Temperature,
+                Messages = messages
+            };
+
+            if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
+            {
+                parameters.System = new List<SystemMessage>
+                {
+                    new SystemMessage(request.SystemPrompt)
+                };
+            }
+
+            var response = await _client.Messages.GetClaudeMessageAsync(parameters);
+
+            return new ChatResponse
+            {
+                Provider = "Claude",
+                Content = response.Content.OfType<TextContent>().First().Text,
+                InputTokens = (int)response.Usage.InputTokens,
+                OutputTokens = (int)response.Usage.OutputTokens
+            };
+        }
     }
 }
