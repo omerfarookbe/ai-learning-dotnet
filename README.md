@@ -2,12 +2,20 @@ AI Learning .NET API
 
 Small demo API that wraps multiple LLM providers (Anthropic/Claude, OpenAI, Google Gemini) for chat-style requests.
 
+Recent changes
+- Added typed service exceptions (AiLearning.Api/Services/Exceptions):
+  - LlmServiceException (base)
+  - ProviderConfigurationException (missing/invalid config, e.g. API keys)
+  - ProviderRuntimeException (provider SDK/network/runtime failures)
+- Services (ClaudeService, OpenAIService, GeminiService) now validate configuration and throw the typed exceptions and wrap provider SDK calls.
+- Controllers perform request validation, logging, and catch exceptions. They currently depend on concrete provider services (ClaudeService, OpenAIService, GeminiService) that are registered in Program.cs.
+
 Prerequisites
 - .NET 10 SDK
 - API keys for providers you intend to use
 
-Quick start
-1. Configure API keys in AiLearning.Api/appsettings.json (or user secrets/environment):
+Configuration
+Configure API keys in AiLearning.Api/appsettings.json, user secrets, or environment variables:
 
 ```json
 {
@@ -19,7 +27,7 @@ Quick start
 }
 ```
 
-2. Run the API
+Run
 - From solution root: dotnet run --project AiLearning.Api
 - In Development environment Swagger UI will be available at https://localhost:{port}/swagger
 
@@ -46,17 +54,57 @@ Response example
 }
 
 Errors and exception handling
-- Services throw typed exceptions found in AiLearning.Api/Services/Exceptions:
-  - ProviderConfigurationException: missing/invalid configuration (API keys)
-  - ProviderRuntimeException: runtime/provider SDK failures
-- Controllers perform basic validation and log errors; unexpected exceptions return ProblemDetails (HTTP 500).
-- Consider adding a centralized ExceptionHandlingMiddleware to map exceptions to ProblemDetails in a single place.
+- Services throw the typed exceptions listed above. Controllers log and return ProblemDetails (HTTP 500) for unexpected errors.
+- ProviderConfigurationException indicates missing or invalid configuration (register API keys).
+- ProviderRuntimeException wraps runtime errors from provider SDKs or network issues.
 
 Dependency injection notes
-- Concrete provider services are registered in Program.cs. To inject a common ILlmService into controllers, register ILlmService to a concrete implementation or add a provider resolver/factory.
+- Current controller constructors accept concrete provider services (ClaudeService, OpenAIService, GeminiService) because Program.cs registers those concrete types.
+- If you prefer controllers to depend on ILlmService, update Program.cs to register the interface to a concrete implementation, e.g.:
+
+```csharp
+// single implementation
+builder.Services.AddSingleton<ILlmService, ClaudeService>();
+
+// or factory / resolver to choose provider at runtime
+builder.Services.AddSingleton<ProviderResolver>();
+```
+
+- For multiple providers a recommended pattern is to:
+  - Register each concrete provider (AddSingleton<ClaudeService>(), etc.)
+  - Register an IProviderResolver or factory service that picks the correct provider by name/config and returns ILlmService
+  - Controllers or a higher-level service request the resolver to obtain the appropriate ILlmService
+
+Logging
+- Controllers use ILogger<T> to emit warnings and error logs. Services do not log provider internals; they throw ProviderRuntimeException which can be logged by controllers or middleware.
+
+Recommended next steps
+- Add a centralized ExceptionHandlingMiddleware to map typed exceptions to standardized ProblemDetails responses (400/422/500/503 as appropriate).
+- Implement a ProviderResolver/factory if you need controller code to remain interface-driven and choose providers at runtime.
 
 Contributing
 - Open a PR with changes; keep DI, logging, and exception handling patterns consistent.
 
 License
 - No license specified.
+
+Embeddings program (current status)
+----------------------------------
+There is a separate console project AiLearning.Embeddings (AiLearning.Embeddings/Program.cs) included in the solution. Current behavior:
+
+- Uses OpenAI.Embeddings with model "text-embedding-3-small".
+- Demo generates embeddings for three sample sentences, prints vector dimensions and the first 5 values, and computes cosine similarity between each pair.
+- API key is required and must be provided either as the first command-line argument or via the environment variable OpenAI_API_KEY.
+
+How to run the demo
+
+- From solution root (example passing key on the command line):
+  dotnet run --project AiLearning.Embeddings -- <OPENAI_API_KEY>
+
+- Or set the environment variable and run without arguments:
+  $env:OpenAI_API_KEY = "<your_key>"  # PowerShell example
+  dotnet run --project AiLearning.Embeddings
+
+Notes
+
+- The embeddings project is a standalone demo and is not currently integrated with AiLearning.Api. Use it as a reference when implementing embedding generation or when adding an embedding-backed vector store to the API.
