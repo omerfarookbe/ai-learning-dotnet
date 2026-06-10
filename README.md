@@ -3,6 +3,7 @@ AI Learning .NET API
 Small demo API that wraps multiple LLM providers (Anthropic/Claude, OpenAI, Google Gemini) for chat-style requests.
 
 Recent changes
+- Added new module: AiLearning.Rag (RAG solution) to support retrieval-augmented generation scenarios.
 - Added typed service exceptions (AiLearning.Api/Services/Exceptions):
   - LlmServiceException (base)
   - ProviderConfigurationException (missing/invalid config, e.g. API keys)
@@ -108,3 +109,18 @@ How to run the demo
 Notes
 
 - The embeddings project is a standalone demo and is not currently integrated with AiLearning.Api. Use it as a reference when implementing embedding generation or when adding an embedding-backed vector store to the API.
+
+RAG module (AiLearning.Rag)
+---------------------------
+
+There is a new project AiLearning.Rag included in the solution. This module demonstrates Retrieval-Augmented Generation (RAG) patterns and shows how to combine a vector store of embeddings with an LLM to answer queries using retrieved context.
+
+Current status
+- Contains example code to index documents, generate embeddings, and perform retrieval to provide context to LLM prompts.
+- May depend on AiLearning.Embeddings for embedding generation or include its own embedding wrapper — check the AiLearning.Rag project for implementation details.
+
+How to run
+- Build the solution: dotnet build
+- Run examples or the RAG demo project (if it's a console/sample): dotnet run --project AiLearning.Rag
+
+If you want more detailed README instructions about the RAG module (architecture diagram, supported vector stores, sample documents, or configuration), tell me what to include and I will expand it.
