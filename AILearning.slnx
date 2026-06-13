@@ -3,4 +3,5 @@
   <Project Path="AiLearning.Api/AiLearning.Api.csproj" />
   <Project Path="AiLearning.Embeddings/AiLearning.Embeddings.csproj" />
   <Project Path="AiLearning.Rag/AiLearning.Rag.csproj" />
+  <Project Path="AiLearning.Streaming/AiLearning.Streaming.csproj" />
 </Solution>
