@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="AiLearning.Agents/AiLearning.Agents.csproj" />
   <Project Path="AiLearning.Api/AiLearning.Api.csproj" />
   <Project Path="AiLearning.Embeddings/AiLearning.Embeddings.csproj" />
   <Project Path="AiLearning.Rag/AiLearning.Rag.csproj" />
